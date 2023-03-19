@@ -1,4 +1,3 @@
-mod mandelbrot;
 
 use clap::Parser;
 use num::Complex;
@@ -53,9 +52,18 @@ fn main() {
         Some(iterations) => println!("{iterations}"),
         None => println!("Did not diverge.")
     }
+
+
 }
 
-fn sample_mandelbrot(location: Complex<f64>, threshold: f64, iterations: u32) -> Option<u32> {
-
-    return Some(0);
+fn sample_mandelbrot(c: Complex<f64>, threshold: f64, iterations: u32) -> Option<u32> {
+    let threshold_squared = threshold * threshold;
+    let mut z = Complex::new(0f64, 0f64);
+    for iteration in 0..iterations {
+        z = (z * z) + c;
+        if z.norm_sqr() > threshold_squared {
+            return Some(iteration + 1)
+        }
+    }
+    return None;
 }
