@@ -3,6 +3,7 @@ use clap::Parser;
 use num::Complex;
 
 use image::{Rgb, RgbImage};
+use indicatif::ProgressBar;
 
 
 #[derive(Parser, Debug)]
@@ -12,7 +13,7 @@ struct Args {
     path: Option<std::path::PathBuf>,
 
     /// Width of the generated image.
-    #[arg(short, long, default_value_t = 1500)]
+    #[arg(short, long, default_value_t = 1000)]
     x_res: u32,
 
     /// Height of the generated image.
@@ -20,28 +21,28 @@ struct Args {
     y_res: u32,
 
     /// Center location on the real axis.
-    #[arg(short, long, default_value_t = -1.3f64)]
+    #[arg(short, long, default_value_t = -1.0)]
     real_offset: f64,
 
     /// Center location on the imaginary axis.
-    #[arg(short, long, default_value_t = 0f64)]
+    #[arg(short, long, default_value_t = 0.0)]
     complex_offset: f64,
 
     /// Zoom factor (pixels per unit distance on complex plane).
-    #[arg(short, long, default_value_t = 1000f64)]
+    #[arg(short, long, default_value_t = 250.0)]
     zoom: f64,
 
     /// Threshold past width the sequence is assumed to diverge.
-    #[arg(short, long, default_value_t = 2f64)]
+    #[arg(short, long, default_value_t = 2.0)]
     threshold: f64,
 
     /// Number of iterations before assuming sequence does not diverge.
-    #[arg(short, long, default_value_t = 100u32)]
+    #[arg(short, long, default_value_t = 100)]
     max_iterations: u32,
 
     /// Number of worker threads to run the calculation on.
     #[arg(short, long, default_value_t = 1)]
-    workers: u16,
+    workers: u32,
 }
 
 fn main() {
@@ -50,6 +51,8 @@ fn main() {
     let center = Complex::new(args.x_res as f64, args.y_res as f64) / args.zoom / 2f64;
     let mut image = RgbImage::new(args.x_res, args.y_res);
 
+    let progress_bar = ProgressBar::new((args.x_res * args.y_res) as u64);
+
     for x in 0..args.x_res {
         for y in 0..args.y_res {
             let location: Complex<f64> = pixel_to_complex((x, y), center, offset, args.zoom);
@@ -57,10 +60,12 @@ fn main() {
                 Some(iterations) => iterations_to_color(iterations, args.max_iterations),
                 None => Rgb([0, 0, 0])
             };
-            image.put_pixel(x, y, color)
+            image.put_pixel(x, y, color);
+            progress_bar.inc(1);
         }
     }
 
+    progress_bar.finish();
     image.save("output.png").unwrap();
 }
 
@@ -71,7 +76,7 @@ fn pixel_to_complex((x, y): (u32, u32), center: Complex<f64>, offset: Complex<f6
 
 fn iterations_to_color(iterations: u32, max_iterations: u32) -> Rgb<u8> {
     let t = iterations as f64 / max_iterations as f64;
-    let color = ((1.0 - t) * 255.0) as u8;
+    let color = ((1.0 - (t)) * 255.0) as u8;
     Rgb([color, color, color])
 }
 
