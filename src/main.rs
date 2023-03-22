@@ -1,9 +1,9 @@
 
 use clap::Parser;
 use num::Complex;
-
+use std::{fmt::Write};
 use image::{Rgb, RgbImage};
-use indicatif::ProgressBar;
+use indicatif::{ProgressBar, ProgressStyle};
 
 
 #[derive(Parser, Debug)]
@@ -49,10 +49,9 @@ fn main() {
     let args = Args::parse();
     let offset = Complex::new(args.real_offset, args.complex_offset);
     let center = Complex::new(args.x_res as f64, args.y_res as f64) / args.zoom / 2f64;
+    let progress_bar = build_progress_bar((args.x_res * args.y_res) as u64);
+
     let mut image = RgbImage::new(args.x_res, args.y_res);
-
-    let progress_bar = ProgressBar::new((args.x_res * args.y_res) as u64);
-
     for x in 0..args.x_res {
         for y in 0..args.y_res {
             let location: Complex<f64> = pixel_to_complex((x, y), center, offset, args.zoom);
@@ -65,8 +64,25 @@ fn main() {
         }
     }
 
-    progress_bar.finish();
+    progress_bar.set_message("Saving image");
     image.save("output.png").unwrap();
+
+    // match args.path {
+    //     Some(pathBuf) => image.save(pathBuf.),
+    //     None =>
+    // }
+
+    progress_bar.finish();
+}
+
+fn build_progress_bar(len: u64) -> ProgressBar {
+    let progress_bar = ProgressBar::new(len);
+    progress_bar.set_style(
+        ProgressStyle::with_template("{msg} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {human_pos}/{human_len}")
+            .unwrap()
+            .progress_chars("#-")
+    );
+    progress_bar
 }
 
 fn pixel_to_complex((x, y): (u32, u32), center: Complex<f64>, offset: Complex<f64>, zoom: f64) -> Complex<f64> {
