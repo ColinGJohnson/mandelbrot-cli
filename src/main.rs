@@ -1,9 +1,10 @@
-
+use std::time::Instant;
 use clap::Parser;
 use num::Complex;
 use image::{Rgb, RgbImage};
 use indicatif::{ProgressBar, ProgressStyle};
 use show_image::{create_window, event};
+use rayon::prelude::*;
 
 
 #[derive(Parser, Debug)]
@@ -43,11 +44,12 @@ struct Args {
 
     /// Number of worker threads to run the calculation on.
     #[arg(short, long, default_value_t = 1)]
-    workers: u32,
+    workers: usize,
 }
 
 #[show_image::main]
 fn main() {
+    let now = Instant::now();
     let args = Args::parse();
     let offset = Complex::new(args.real_offset, args.complex_offset);
     let center = Complex::new(args.x_res as f64, args.y_res as f64) / args.zoom / 2f64;
@@ -55,14 +57,40 @@ fn main() {
     let progress_bar = build_progress_bar((args.x_res * args.y_res) as u64);
     progress_bar.set_message("Sampling Mandelbrot");
 
-    let mut image = RgbImage::new(args.x_res, args.y_res);
+
+    // create a thread pool
+
+    // create a pool of jobs and submit them to the thread pool during creation
+
+    // collect results as they finish (synchronously) and write pixels to the image
+
+    // save the image
+
+    let mut jobs = Vec::new();
     for x in 0..args.x_res {
         for y in 0..args.y_res {
-            let color = get_pixel(&args, offset, center, x, y);
-            image.put_pixel(x, y, color);
-            progress_bar.inc(1);
+            jobs.push((x, y));
         }
     }
+
+    let mut image = RgbImage::new(args.x_res, args.y_res);
+    let mut pixels: Vec<(&u32, &u32, Rgb<u8>)> = Vec::new();
+
+    jobs.par_iter()
+        .map(|(x, y)| {
+            let location: Complex<f64> = pixel_to_complex((*x, *y), center, offset, args.zoom);
+            let color = match sample_mandelbrot(location, args.threshold, args.max_iterations) {
+                Some(iterations) => iterations_to_color(iterations, args.max_iterations),
+                None => Rgb([0, 0, 0])
+            };
+            progress_bar.inc(1);
+            (x, y, color)
+        }).collect_into_vec(&mut pixels);
+
+    for (x, y, color) in pixels {
+        image.put_pixel(*x, *y, color);
+    }
+
 
     match args.output {
         Some(output) => {
@@ -77,17 +105,10 @@ fn main() {
 
     progress_bar.set_message("Saving image");
     progress_bar.finish();
-}
 
-fn get_pixel(args: &Args, offset: Complex<f64>, center: Complex<f64>, x: u32, y: u32) -> Rgb<u8> {
-    let location: Complex<f64> = pixel_to_complex((x, y), center, offset, args.zoom);
-    let color = match sample_mandelbrot(location, args.threshold, args.max_iterations) {
-        Some(iterations) => iterations_to_color(iterations, args.max_iterations),
-        None => Rgb([0, 0, 0])
-    };
-    color
+    let elapsed = now.elapsed().as_millis();
+    println!("Finished in {elapsed}ms")
 }
-
 
 fn show_image(image: RgbImage)-> Result<(), Box<dyn std::error::Error>> {
     let window = create_window("Mandelbrot", Default::default())?;
