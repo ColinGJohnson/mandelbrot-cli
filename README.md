@@ -3,6 +3,8 @@
 
 A command line utility to generate visualizations of the [Mandelbrot Set](https://en.wikipedia.org/wiki/Mandelbrot_set).
 
+## Example
+
 ```shell
 .\rust-mandelbrot.exe --x-res=500 --y-res=500 --zoom=150 --real-offset=-0.75  --output example.png
 ```
