@@ -47,6 +47,12 @@ struct Args {
     workers: usize,
 }
 
+#[derive(Copy, Clone)]
+struct PixelLocation {
+    x: u32,
+    y: u32,
+}
+
 #[show_image::main]
 fn main() {
     let now = Instant::now();
@@ -57,40 +63,20 @@ fn main() {
     let progress_bar = build_progress_bar((args.x_res * args.y_res) as u64);
     progress_bar.set_message("Sampling Mandelbrot");
 
-
-    // create a thread pool
-
-    // create a pool of jobs and submit them to the thread pool during creation
-
-    // collect results as they finish (synchronously) and write pixels to the image
-
-    // save the image
-
-    let mut jobs = Vec::new();
-    for x in 0..args.x_res {
-        for y in 0..args.y_res {
-            jobs.push((x, y));
-        }
-    }
-
     let mut image = RgbImage::new(args.x_res, args.y_res);
-    let mut pixels: Vec<(&u32, &u32, Rgb<u8>)> = Vec::new();
-
-    jobs.par_iter()
-        .map(|(x, y)| {
-            let location: Complex<f64> = pixel_to_complex((*x, *y), center, offset, args.zoom);
-            let color = match sample_mandelbrot(location, args.threshold, args.max_iterations) {
+    let thread_pool = rayon::ThreadPoolBuilder::new().num_threads(args.workers).build().unwrap();
+    thread_pool.install(|| {
+        // TODO: Using par_bridge is less efficient than starting with par_iter.
+        image.enumerate_pixels_mut().par_bridge().for_each(|(x, y, pixel)| {
+            let complex_location: Complex<f64> = pixel_to_complex(PixelLocation { x, y }, center, offset, args.zoom);
+            let color = match sample_mandelbrot(complex_location, args.threshold, args.max_iterations) {
                 Some(iterations) => iterations_to_color(iterations, args.max_iterations),
                 None => Rgb([0, 0, 0])
             };
+            *pixel = color;
             progress_bar.inc(1);
-            (x, y, color)
-        }).collect_into_vec(&mut pixels);
-
-    for (x, y, color) in pixels {
-        image.put_pixel(*x, *y, color);
-    }
-
+        });
+    });
 
     match args.output {
         Some(output) => {
@@ -110,11 +96,10 @@ fn main() {
     println!("Finished in {elapsed}ms")
 }
 
+/// Display the image in a window and wait for the user to press escape.
 fn show_image(image: RgbImage)-> Result<(), Box<dyn std::error::Error>> {
     let window = create_window("Mandelbrot", Default::default())?;
     window.set_image("Mandelbrot", image)?;
-
-    // wait until escape button pressed
     for event in window.event_channel()? {
         if let event::WindowEvent::KeyboardInput(event) = event {
             if event.input.key_code == Some(event::VirtualKeyCode::Escape)
@@ -123,10 +108,10 @@ fn show_image(image: RgbImage)-> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
-
     Ok(())
 }
 
+/// Construct a progress bar with a custom style.
 fn build_progress_bar(len: u64) -> ProgressBar {
     let progress_bar = ProgressBar::new(len);
     progress_bar.set_style(
@@ -137,17 +122,21 @@ fn build_progress_bar(len: u64) -> ProgressBar {
     progress_bar
 }
 
-fn pixel_to_complex((x, y): (u32, u32), center: Complex<f64>, offset: Complex<f64>, zoom: f64) -> Complex<f64> {
-    let sample = Complex::new(x as f64, y as f64) / zoom;
+/// Convert a pixel location to a location on the complex plane.
+fn pixel_to_complex( location: PixelLocation, center: Complex<f64>, offset: Complex<f64>, zoom: f64) -> Complex<f64> {
+    let sample = Complex::new(location.x as f64, location.y as f64) / zoom;
     sample + offset - center
 }
 
+/// Map the number of iterations to a color.
 fn iterations_to_color(iterations: u32, max_iterations: u32) -> Rgb<u8> {
     let t = iterations as f64 / max_iterations as f64;
     let color = ((1.0 - (t)) * 255.0) as u8;
     Rgb([color, color, color])
 }
 
+/// Sample the mandelbrot set at the given location.
+/// Returns num iterations before the sequence diverged, or None if the sequence did not diverge.
 fn sample_mandelbrot(c: Complex<f64>, threshold: f64, iterations: u32) -> Option<u32> {
     let threshold_squared = threshold * threshold;
     let mut z = Complex::new(0.0, 0.0);
