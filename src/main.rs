@@ -66,7 +66,6 @@ fn main() {
     let mut image = RgbImage::new(args.x_res, args.y_res);
     let thread_pool = rayon::ThreadPoolBuilder::new().num_threads(args.workers).build().unwrap();
     thread_pool.install(|| {
-        // TODO: Using par_bridge is less efficient than starting with par_iter.
         image.enumerate_pixels_mut().par_bridge().for_each(|(x, y, pixel)| {
             let complex_location: Complex<f64> = pixel_to_complex(PixelLocation { x, y }, center, offset, args.zoom);
             let color = match sample_mandelbrot(complex_location, args.threshold, args.max_iterations) {
