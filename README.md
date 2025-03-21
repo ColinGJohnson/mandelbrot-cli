@@ -6,10 +6,10 @@ A command line utility to generate visualizations of the [Mandelbrot Set](https:
 ## Example
 
 ```shell
-.\mandelbrot --x-res=500 --y-res=500 --zoom=150 --real-offset=-0.75  --output example.png
+./mandelbrot --output zoom_center.png --zoom 1000.0 --x-res 1920 --y-res 1080
 ```
 
-![Mandelbrot Set](img/example.png)
+![image](https://github.com/user-attachments/assets/343a88d4-9e91-4c59-aa62-c7cd7167e301)
 
 ## Usage
 
