@@ -1,16 +1,14 @@
-use std::time::Instant;
 use clap::Parser;
-use num::Complex;
 use image::{Rgb, RgbImage};
 use indicatif::{ProgressBar, ProgressStyle};
-use show_image::{create_window, event};
+use num::Complex;
 use rayon::prelude::*;
-
+use std::time::Instant;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// Output file path to use instead of the Image preview window.
+    /// Output file path.
     #[arg(short, long)]
     output: Option<String>,
 
@@ -34,7 +32,7 @@ struct Args {
     #[arg(short, long, default_value_t = 250.0)]
     zoom: f64,
 
-    /// Threshold past width the sequence is assumed to diverge.
+    /// Threshold past which the sequence is assumed to diverge.
     #[arg(short, long, default_value_t = 2.0)]
     threshold: f64,
 
@@ -53,12 +51,11 @@ struct PixelLocation {
     y: u32,
 }
 
-#[show_image::main]
 fn main() {
     let now = Instant::now();
     let args = Args::parse();
     let offset = Complex::new(args.real_offset, args.complex_offset);
-    let center = Complex::new(args.x_res as f64, args.y_res as f64) / args.zoom / 2f64;
+    let center = (Complex::new(args.x_res as f64, args.y_res as f64) / args.zoom) / 2f64;
 
     let progress_bar = build_progress_bar((args.x_res * args.y_res) as u64);
     progress_bar.set_message("Sampling Mandelbrot");
@@ -77,37 +74,21 @@ fn main() {
         });
     });
 
-    match args.output {
-        Some(output) => {
-            progress_bar.set_message("Saving image");
-            image.save(output).unwrap();
-        },
-        None => {
-            progress_bar.set_message("Displaying image");
-            show_image(image).unwrap()
-        }
-    };
+    let output_path = args.output.unwrap_or_else(|| "mandelbrot.png".to_string());
+    progress_bar.set_message(format!("Saving image as {}", output_path));
 
-    progress_bar.set_message("Saving image");
+    match image.save(output_path) {
+        Err(e) => {
+            println!("Error saving image {}", e)
+        }
+        _ => {}
+    }
+
+    progress_bar.set_message("Done");
     progress_bar.finish();
 
     let elapsed = now.elapsed().as_millis();
-    println!("Finished in {elapsed}ms")
-}
-
-/// Display the image in a window and wait for the user to press escape.
-fn show_image(image: RgbImage)-> Result<(), Box<dyn std::error::Error>> {
-    let window = create_window("Mandelbrot", Default::default())?;
-    window.set_image("Mandelbrot", image)?;
-    for event in window.event_channel()? {
-        if let event::WindowEvent::KeyboardInput(event) = event {
-            if event.input.key_code == Some(event::VirtualKeyCode::Escape)
-                && event.input.state.is_pressed() {
-                break;
-            }
-        }
-    }
-    Ok(())
+    println!("Elapsed time: {}ms", elapsed);
 }
 
 /// Construct a progress bar with a custom style.
@@ -141,9 +122,11 @@ fn sample_mandelbrot(c: Complex<f64>, threshold: f64, iterations: u32) -> Option
     let mut z = Complex::new(0.0, 0.0);
     for iteration in 0..iterations {
         z = (z * z) + c;
+
+        // TODO: Consider using f64::hypot(z.re, z.im) to avoid overflow
         if z.norm_sqr() > threshold_squared {
             return Some(iteration + 1)
         }
     }
-    return None;
+    None
 }

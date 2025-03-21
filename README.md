@@ -6,7 +6,7 @@ A command line utility to generate visualizations of the [Mandelbrot Set](https:
 ## Example
 
 ```shell
-.\rust-mandelbrot --x-res=500 --y-res=500 --zoom=150 --real-offset=-0.75  --output example.png
+.\mandelbrot --x-res=500 --y-res=500 --zoom=150 --real-offset=-0.75  --output example.png
 ```
 
 ![Mandelbrot Set](img/example.png)

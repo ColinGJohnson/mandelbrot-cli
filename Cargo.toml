@@ -1,15 +1,11 @@
 [package]
-name = "rust-mandelbrot"
+name = "mandelbrot"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 clap = { version = "4.1.11", features = ["derive"] }
-grid = "0.9.0"
-image = "0.24.5"
+image = "0.25.5"
 indicatif = "0.17.3"
 num = "0.4.0"
 rayon = "1.7.0"
-show-image = { version = "0.13.1", features = ["image"] }
