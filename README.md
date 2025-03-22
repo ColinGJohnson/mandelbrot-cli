@@ -9,7 +9,8 @@ A command line utility to generate visualizations of the [Mandelbrot Set](https:
 mandelbrot --output center_zoom.png --zoom 1000.0 --x-res 1920 --y-res 1080
 ```
 
-![image](https://github.com/user-attachments/assets/343a88d4-9e91-4c59-aa62-c7cd7167e301)
+![image](https://github.com/user-attachments/assets/494b255b-3996-4a71-ba74-948c26336c00)
+
 
 ```shell
 mandelbrot --output double_spiral.png --real-offset=-0.745 --complex-offset=0.1 --zoom 200000.0 --x-res 1920 --y-res 1080 -m 1000
