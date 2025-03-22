@@ -4,6 +4,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use num::Complex;
 use rayon::prelude::*;
 use std::time::Instant;
+use rand::Rng;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -21,7 +22,7 @@ struct Args {
     y_res: u32,
 
     /// Center location on the real axis.
-    #[arg(short, long, default_value_t = -1.0)]
+    #[arg(short, long, default_value_t = 0.0)]
     real_offset: f64,
 
     /// Center location on the imaginary axis.
@@ -29,7 +30,7 @@ struct Args {
     complex_offset: f64,
 
     /// Zoom factor (pixels per unit distance on complex plane).
-    #[arg(short, long, default_value_t = 250.0)]
+    #[arg(short, long, default_value_t = 300.0)]
     zoom: f64,
 
     /// Threshold past which the sequence is assumed to diverge.
@@ -58,16 +59,13 @@ struct PixelLocation {
 
 fn main() {
     // black/white
-    // let palette = vec!("#FFFFFF", "#000000");
+    // let palette = vec!["#FFFFFF", "#000000"];
 
     // virdis
-    let palette = vec!("#000000", "#440c54", "#47337e", "#365c8d", "#277f8e", "#1ea187", "#49c26c", "#9eda3a", "#9eda3a");
+    let palette = vec!["#000000", "#440c54", "#47337e", "#365c8d", "#277f8e", "#1ea187", "#49c26c", "#9eda3a", "#9eda3a"];
 
     // aurora
-    // let palette = vec![
-    //     "#001a33", "#003d66", "#007f7f", "#00b34d", "#b3ef00",
-    //     "#ffd966", "#ff6600", "#99004d", "#330033"
-    // ];
+    // let palette = vec![ "#001a33", "#003d66", "#007f7f", "#00b34d", "#b3ef00", "#ffd966", "#ff6600", "#99004d", "#330033"];
 
 
     let palette_rgb = palette.iter()
@@ -92,7 +90,7 @@ fn main() {
     for x in 0..args.x_res {
         for y in 0..args.y_res {
             let complex_location: Complex<f64> = pixel_to_complex(PixelLocation { x, y }, center, offset, args.zoom);
-            let sample = sample_mandelbrot(complex_location, args.threshold, args.max_iterations);
+            let sample = super_sample_mandelbrot(4, (1.0 / args.zoom) / 2f64, complex_location, args.threshold, args.max_iterations);
             mandelbrot_data[x as usize][y as usize] = sample;
             if sample.is_some() {
                 flattened.push(sample.unwrap());
@@ -200,6 +198,26 @@ fn convert_hex_to_rgb(hex: &str) -> [u8; 3] {
         u8::from_str_radix(&trimmed[2..4], 16).unwrap(),
         u8::from_str_radix(&trimmed[4..6], 16).unwrap()
     ]
+}
+
+
+/// Returns the average of multiple samples within a given range
+/// https://en.wikipedia.org/wiki/Supersampling.
+fn super_sample_mandelbrot(samples: u32, range: f64, c: Complex<f64>, threshold: f64, max_iterations: u32) -> Option<f64> {
+    let mut rng = rand::rng();
+    let mut sum = 0f64;
+    let mut diverged_samples = 0;
+    for _ in 0..samples - 1 {
+        let re: f64 = rng.random_range(-range..range);
+        let im: f64 = rng.random_range(-range..range);
+        let location = Complex::new(c.re + re, c.im + im) ;
+        let sample = sample_mandelbrot(location, threshold, max_iterations);
+        if sample.is_some() {
+            sum += sample.unwrap();
+            diverged_samples += 1
+        }
+    }
+    if diverged_samples > 0 { Some(sum / diverged_samples as f64) } else { None }
 }
 
 /// Sample the mandelbrot set at the given location.
