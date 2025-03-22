@@ -1,3 +1,5 @@
 .idea
 /target
-output.png
+/frames
+*.png
+*.mp4
