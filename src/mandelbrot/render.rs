@@ -14,8 +14,10 @@ pub fn create_image(palette: PresetPalette, data: SampleResult, progress_bar: &P
         .collect();
     flattened.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
-    let min = *flattened.get(0).unwrap();
-    let max = *flattened.get(((flattened.len() - 1) as f32 * 0.990) as usize).unwrap();
+    let min = *flattened.get(0)
+        .unwrap_or(&0f64);
+    let max = *flattened.get(((flattened.len() - 1) as f32 * 0.990) as usize)
+        .unwrap_or(&0f64);
 
     let mut image = RgbImage::new(data.x_res, data.y_res);
     for (x, y, pixel) in image.enumerate_pixels_mut() {
