@@ -7,6 +7,7 @@ const DID_NOT_CONVERGE: Rgb<u8> = Rgb([0, 0, 0]);
 
 pub fn create_image(palette: PresetPalette, data: SampleResult, progress_bar: &ProgressBar) -> RgbImage {
 
+    // TODO: Calculate min/max while sampling instead
     let mut flattened: Vec<f64> = data.grid.iter()
         .flatten()
         .filter(|x| x.is_some())
@@ -24,13 +25,13 @@ pub fn create_image(palette: PresetPalette, data: SampleResult, progress_bar: &P
         let color = match data.grid[x as usize][y as usize] {
             Some(iterations) => {
                 let scaled = scale_value(iterations, min, max);
-                sample_palette(palette, scaled)
+                sample_palette(&palette, scaled)
             },
             None => DID_NOT_CONVERGE
         };
         *pixel = color;
-        if y % 100 == 0 {
-            progress_bar.inc(100);
+        if y % 1000 == 0 {
+            progress_bar.inc(1000);
         }
     }
     image

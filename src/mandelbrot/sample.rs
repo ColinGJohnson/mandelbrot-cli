@@ -25,12 +25,11 @@ pub fn sample_grid(args: &Args, progress_bar: &ProgressBar) -> SampleResult {
         for y in 0..args.y_res {
             let sample = sample_pixel(args, offset, center, x as u32, y);
             column[y as usize] = sample;
-            if y % 100 == 0 {
-                progress_bar.inc(100);
+            if y % 1000 == 0 {
+                progress_bar.inc(1000);
             }
         }
     });
-    progress_bar.finish();
 
     SampleResult {
         x_res: args.x_res,

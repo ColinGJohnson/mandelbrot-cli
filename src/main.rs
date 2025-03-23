@@ -1,6 +1,6 @@
 mod mandelbrot;
 
-use crate::mandelbrot::palette::PresetPalette::Viridis;
+use crate::mandelbrot::palette::PresetPalette;
 use crate::mandelbrot::render::create_image;
 use crate::mandelbrot::sample::sample_grid;
 use clap::{arg, Parser};
@@ -49,9 +49,13 @@ struct Args {
     #[arg(short, long, default_value_t = 1)]
     workers: usize,
 
+    /// Color scheme for the resulting image.
+    #[arg(short, long, default_value_t, value_enum)]
+    palette: PresetPalette,
+
     /// Percentile after which to consider pixels as having reached the end of the color palette.
     /// Avoids a small number of extreme values throwing off the color scale.
-    #[arg(short, long, default_value_t = 1.0)]
+    #[arg(long, default_value_t = 1.0)]
     palette_clamp: f64,
 }
 
@@ -63,14 +67,15 @@ fn main() {
     progress.set_message("Sampling");
     let data = sample_grid(&args, &progress);
 
-    progress.reset();
+    progress.set_position(0);
     progress.set_message("Rendering".to_string());
-    let image = create_image(Viridis, data, &progress);
+    let image = create_image(args.palette, data, &progress);
 
     progress.set_message("Saving".to_string());
     image.save(&args.output).unwrap();
     progress.finish_with_message("Done");
-    print!("Finished in {:?}, Saved as {}", std::time::Instant::now() - start_time, args.output);
+    println!("Finished in {:?}", std::time::Instant::now() - start_time);
+    println!("Saved image as {}", args.output);
 }
 
 fn build_progress_bar(len: u64) -> ProgressBar {

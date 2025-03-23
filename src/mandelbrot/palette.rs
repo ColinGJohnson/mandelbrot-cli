@@ -1,13 +1,14 @@
 use image::Rgb;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(clap::ValueEnum, Clone, Default, Debug)]
 pub enum PresetPalette {
-    BlackWhite,
+    #[default]
     Viridis,
+    BlackWhite,
     Aurora,
 }
 
-pub fn sample_palette(palette: PresetPalette, t: f64) -> Rgb<u8> {
+pub fn sample_palette(palette: &PresetPalette, t: f64) -> Rgb<u8> {
     let palette_rgb = get_palette(palette);
 
     let scaled_t = t * (palette_rgb.len() as f64 - 1.0);
@@ -22,7 +23,7 @@ pub fn sample_palette(palette: PresetPalette, t: f64) -> Rgb<u8> {
     )
 }
 
-fn get_palette(palette: PresetPalette) -> Vec<[u8; 3]> {
+fn get_palette(palette: &PresetPalette) -> Vec<[u8; 3]> {
     palette_to_rgb(match palette {
         PresetPalette::BlackWhite => vec![
             "#FFFFFF", "#000000"
