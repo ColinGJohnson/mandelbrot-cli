@@ -1,13 +1,13 @@
 use image::{Rgb, RgbImage};
-use rayon::prelude::*;
+use indicatif::ProgressBar;
 use crate::mandelbrot::palette::{sample_palette, PresetPalette};
+use crate::mandelbrot::sample::SampleResult;
 
 const DID_NOT_CONVERGE: Rgb<u8> = Rgb([0, 0, 0]);
 
-pub fn create_image(palette: PresetPalette, x_res: u32, y_res: u32,
-                    mandelbrot_data: Vec<Vec<Option<f64>>>) -> RgbImage {
+pub fn create_image(palette: PresetPalette, data: SampleResult, progress_bar: &ProgressBar) -> RgbImage {
 
-    let mut flattened: Vec<f64> = mandelbrot_data.iter()
+    let mut flattened: Vec<f64> = data.grid.iter()
         .flatten()
         .filter(|x| x.is_some())
         .map(|x| x.unwrap())
@@ -17,9 +17,9 @@ pub fn create_image(palette: PresetPalette, x_res: u32, y_res: u32,
     let min = *flattened.get(0).unwrap();
     let max = *flattened.get(((flattened.len() - 1) as f32 * 0.990) as usize).unwrap();
 
-    let mut image = RgbImage::new(x_res, y_res);
+    let mut image = RgbImage::new(data.x_res, data.y_res);
     for (x, y, pixel) in image.enumerate_pixels_mut() {
-        let color = match mandelbrot_data[x as usize][y as usize] {
+        let color = match data.grid[x as usize][y as usize] {
             Some(iterations) => {
                 let scaled = scale_value(iterations, min, max);
                 sample_palette(palette, scaled)
@@ -27,6 +27,9 @@ pub fn create_image(palette: PresetPalette, x_res: u32, y_res: u32,
             None => DID_NOT_CONVERGE
         };
         *pixel = color;
+        if y % 100 == 0 {
+            progress_bar.inc(100);
+        }
     }
     image
 }

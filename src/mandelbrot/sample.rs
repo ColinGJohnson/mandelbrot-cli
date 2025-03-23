@@ -1,7 +1,8 @@
+use crate::Args;
 use indicatif::ProgressBar;
 use num::Complex;
 use rand::Rng;
-use crate::{Args};
+use rayon::prelude::*;
 
 #[derive(Copy, Clone)]
 struct Pixel {
@@ -9,19 +10,33 @@ struct Pixel {
     y: u32,
 }
 
-pub fn sample_grid(args: &Args, progress_bar: &ProgressBar) -> Vec<Vec<Option<f64>>> {
+pub struct SampleResult {
+    pub x_res: u32,
+    pub y_res: u32,
+    pub grid: Vec<Vec<Option<f64>>>,
+}
+
+pub fn sample_grid(args: &Args, progress_bar: &ProgressBar) -> SampleResult {
     let offset = Complex::new(args.real_offset, args.complex_offset);
     let center = (Complex::new(args.x_res as f64, args.y_res as f64) / args.zoom) / 2f64;
     let mut result = vec![vec![None; args.y_res as usize]; args.x_res as usize];
 
-    for x in 0..args.x_res {
+    result.par_iter_mut().enumerate().for_each(|(x, column)| {
         for y in 0..args.y_res {
-            result[x as usize][y as usize] = sample_pixel(args, offset, center, x, y);
-            progress_bar.inc(1);
+            let sample = sample_pixel(args, offset, center, x as u32, y);
+            column[y as usize] = sample;
+            if y % 100 == 0 {
+                progress_bar.inc(100);
+            }
         }
-    }
+    });
+    progress_bar.finish();
 
-    result
+    SampleResult {
+        x_res: args.x_res,
+        y_res: args.y_res,
+        grid: result,
+    }
 }
 
 fn sample_pixel(args: &Args, offset: Complex<f64>, center: Complex<f64>, x: u32, y: u32) -> Option<f64> {

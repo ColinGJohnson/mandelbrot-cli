@@ -57,24 +57,20 @@ struct Args {
 
 fn main() {
     let args = Args::parse();
-    let progress_bar = build_progress_bar((args.x_res * args.y_res) as u64);
+    let start_time = std::time::Instant::now();
 
-    progress_bar.set_message("Sampling Mandelbrot");
-    let data = sample_grid(&args, &progress_bar);
+    let progress = build_progress_bar((args.x_res * args.y_res) as u64);
+    progress.set_message("Sampling");
+    let data = sample_grid(&args, &progress);
 
-    progress_bar.set_message("Converting to image".to_string());
-    let image = create_image(Viridis, args.x_res, args.y_res, data);
+    progress.reset();
+    progress.set_message("Rendering".to_string());
+    let image = create_image(Viridis, data, &progress);
 
-    progress_bar.set_message(format!("Saving image as {}", args.output));
-    match image.save(args.output) {
-        Err(e) => {
-            println!("Error saving image {}", e)
-        }
-        _ => {}
-    }
-
-    progress_bar.set_message("Done");
-    progress_bar.finish();
+    progress.set_message("Saving".to_string());
+    image.save(&args.output).unwrap();
+    progress.finish_with_message("Done");
+    print!("Finished in {:?}, Saved as {}", std::time::Instant::now() - start_time, args.output);
 }
 
 fn build_progress_bar(len: u64) -> ProgressBar {
