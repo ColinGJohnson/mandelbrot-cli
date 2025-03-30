@@ -51,7 +51,7 @@ fn pixel_to_complex(location: Pixel, center: Complex<f64>, offset: Complex<f64>,
     sample + offset - center
 }
 
-/// Returns the average of multiple samples within a given range
+/// Returns the average of multiple samples within a given range.
 /// https://en.wikipedia.org/wiki/Supersampling.
 fn super_sample_mandelbrot(samples: u32, range: f64, c: Complex<f64>, threshold: f64,
                            max_iterations: u32) -> Option<f64> {
@@ -59,6 +59,8 @@ fn super_sample_mandelbrot(samples: u32, range: f64, c: Complex<f64>, threshold:
     let mut diverged_samples = 0;
 
     for _ in 0..samples - 1 {
+
+        // TODO: Take random samples from sub pixels (jitter)
         let sample = sample_mandelbrot(super_sample(c, range), threshold, max_iterations);
         if sample.is_some() {
             sum += sample.unwrap();
@@ -87,6 +89,7 @@ fn sample_mandelbrot(c: Complex<f64>, threshold: f64, max_iterations: u32) -> Op
     for iteration in 0..max_iterations {
         z = (z * z) + c;
         if f64::hypot(z.re, z.im) > threshold {
+            // TODO: add param to enable/disable smoothing
             // return Some((iteration + 1) as f64)
             return Some(smooth_iteration(iteration, z));
         }
