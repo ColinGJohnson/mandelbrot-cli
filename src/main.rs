@@ -21,11 +21,11 @@ struct Args {
     #[arg(short, long, default_value_t = 1000)]
     y_res: u32,
 
-    /// Center location on the real axis.
-    #[arg(short, long, default_value_t = -1.0)]
+    /// Center location on the real (horizontal) axis.
+    #[arg(short, long, default_value_t = -0.5)]
     real_offset: f64,
 
-    /// Center location on the imaginary axis.
+    /// Center location on the imaginary (vertical) axis.
     #[arg(short, long, default_value_t = 0.0)]
     complex_offset: f64,
 
@@ -55,7 +55,7 @@ struct Args {
 
     /// Percentile after which to consider pixels as having reached the end of the color palette.
     /// Avoids a small number of extreme values throwing off the color scale.
-    #[arg(long, default_value_t = 1.0)]
+    #[arg(long, default_value_t = 0.99)]
     palette_clamp: f64,
 }
 
@@ -69,7 +69,7 @@ fn main() {
 
     progress.set_position(0);
     progress.set_message("Rendering".to_string());
-    let image = create_image(args.palette, data, &progress);
+    let image = create_image(args.palette, args.palette_clamp, data, &progress);
 
     progress.set_message("Saving".to_string());
     image.save(args.output.clone()).unwrap();

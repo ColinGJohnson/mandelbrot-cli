@@ -21,12 +21,13 @@ pub fn sample_grid(args: &Args, progress_bar: &ProgressBar) -> SampleResult {
     let center = (Complex::new(args.x_res as f64, args.y_res as f64) / args.zoom) / 2f64;
     let mut result = vec![vec![None; args.y_res as usize]; args.x_res as usize];
 
+    // TODO: Degree of parallelism shouldn't depend on the image size & aspect ratio
     result.par_iter_mut().enumerate().for_each(|(x, column)| {
         for y in 0..args.y_res {
             let sample = sample_pixel(args, offset, center, x as u32, y);
             column[y as usize] = sample;
-            if y % 1000 == 0 {
-                progress_bar.inc(1000);
+            if y % 100 == 0 {
+                progress_bar.inc(100);
             }
         }
     });
