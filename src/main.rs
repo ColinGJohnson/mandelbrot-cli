@@ -10,7 +10,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 #[command(author, version, about, long_about = None)]
 struct Args {
     /// Output file path.
-    #[arg(short, long, default_value_t)]
+    #[arg(short, long, default_value = "mandelbrot.png")]
     output: String,
 
     /// Width of the generated image.
@@ -72,7 +72,7 @@ fn main() {
     let image = create_image(args.palette, data, &progress);
 
     progress.set_message("Saving".to_string());
-    image.save(&args.output).unwrap();
+    image.save(args.output.clone()).unwrap();
     progress.finish_with_message("Done");
     println!("Finished in {:?}", std::time::Instant::now() - start_time);
     println!("Saved image as {}", args.output);
