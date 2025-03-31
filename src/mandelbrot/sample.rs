@@ -42,7 +42,7 @@ pub fn sample_grid(args: &Args, progress_bar: &ProgressBar) -> SampleResult {
 fn sample_pixel(args: &Args, offset: Complex<f64>, center: Complex<f64>, x: u32, y: u32) -> Option<f64> {
     let location: Complex<f64> = pixel_to_complex(Pixel { x, y }, center, offset, args.zoom);
     let half_pixel = (1.0 / args.zoom) / 2f64;
-    super_sample_mandelbrot(args.samples, half_pixel, location, args.threshold, args.max_iterations)
+    super_sample_mandelbrot(args, half_pixel, location)
 }
 
 /// Convert a pixel location to a location on the complex plane.
@@ -53,15 +53,13 @@ fn pixel_to_complex(location: Pixel, center: Complex<f64>, offset: Complex<f64>,
 
 /// Returns the average of multiple samples within a given range.
 /// https://en.wikipedia.org/wiki/Supersampling.
-fn super_sample_mandelbrot(samples: u32, range: f64, c: Complex<f64>, threshold: f64,
-                           max_iterations: u32) -> Option<f64> {
+fn super_sample_mandelbrot(args: &Args, range: f64, c: Complex<f64>) -> Option<f64> {
     let mut sum = 0f64;
     let mut diverged_samples = 0;
 
-    for _ in 0..samples - 1 {
-
-        // TODO: Take random samples from sub pixels (jitter)
-        let sample = sample_mandelbrot(super_sample(c, range), threshold, max_iterations);
+    // TODO: Take random samples from sub pixels (jitter)
+    for _ in 0..args.samples - 1 {
+        let sample = sample_mandelbrot(args, super_sample(c, range));
         if sample.is_some() {
             sum += sample.unwrap();
             diverged_samples += 1
@@ -84,19 +82,26 @@ fn super_sample(c: Complex<f64>, range: f64) -> Complex<f64> {
 
 /// Sample the mandelbrot set at the given location.
 /// Returns num iterations before the sequence diverged, or None if the sequence did not diverge.
-fn sample_mandelbrot(c: Complex<f64>, threshold: f64, max_iterations: u32) -> Option<f64> {
+fn sample_mandelbrot(args: &Args, c: Complex<f64>) -> Option<f64> {
     let mut z = Complex::new(0.0, 0.0);
-    for iteration in 0..max_iterations {
+    for iteration in 0..args.max_iterations {
         z = (z * z) + c;
-        if f64::hypot(z.re, z.im) > threshold {
-            // TODO: add param to enable/disable smoothing
-            // return Some((iteration + 1) as f64)
-            return Some(smooth_iteration(iteration, z));
+        if f64::hypot(z.re, z.im) > args.threshold {
+            return if args.smooth {
+                Some(smooth_iteration(iteration, z))
+            } else {
+                Some((iteration + 1) as f64)
+            }
         }
     }
     None
 }
 
+/// Calculates a "smooth" escape time to improve color gradients in the rendered Mandelbrot set.
+///
+/// # Parameters
+/// - `iteration`: The number of iterations before the sequence diverged.
+/// - `z`: The final value of the `z` term when the sequence diverged.
 fn smooth_iteration(iteration: u32, z: Complex<f64>) -> f64 {
     iteration as f64 + 1.0 - ((z.norm().ln() / 2.0_f64.ln()).ln() / 2.0_f64.ln())
 }

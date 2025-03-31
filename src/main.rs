@@ -57,6 +57,9 @@ struct Args {
     /// Avoids a small number of extreme values throwing off the color scale.
     #[arg(long, default_value_t = 0.99)]
     palette_clamp: f64,
+
+    #[arg(long, default_value_t = true)]
+    smooth: bool
 }
 
 fn main() {
