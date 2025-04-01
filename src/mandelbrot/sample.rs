@@ -1,6 +1,7 @@
 use crate::Args;
 use indicatif::ProgressBar;
 use num::Complex;
+use num::integer::Roots;
 use rand::Rng;
 use rayon::prelude::*;
 
@@ -41,8 +42,7 @@ pub fn sample_grid(args: &Args, progress_bar: &ProgressBar) -> SampleResult {
 
 fn sample_pixel(args: &Args, offset: Complex<f64>, center: Complex<f64>, x: u32, y: u32) -> Option<f64> {
     let location: Complex<f64> = pixel_to_complex(Pixel { x, y }, center, offset, args.zoom);
-    let half_pixel = (1.0 / args.zoom) / 2f64;
-    super_sample_mandelbrot(args, half_pixel, location)
+    super_sample_mandelbrot(args, location)
 }
 
 /// Convert a pixel location to a location on the complex plane.
@@ -51,18 +51,22 @@ fn pixel_to_complex(location: Pixel, center: Complex<f64>, offset: Complex<f64>,
     sample + offset - center
 }
 
-/// Returns the average of multiple samples within a given range.
+/// Returns the average of multiple samples within a given range. Sampling uses a "jitter" strategy.
 /// https://en.wikipedia.org/wiki/Supersampling.
-fn super_sample_mandelbrot(args: &Args, range: f64, c: Complex<f64>) -> Option<f64> {
+fn super_sample_mandelbrot(args: &Args, c: Complex<f64>) -> Option<f64> {
     let mut sum = 0f64;
     let mut diverged_samples = 0;
+    let subpixel_width = (1.0 / args.zoom) / (args.samples as f64).sqrt();
 
-    // TODO: Take random samples from sub pixels (jitter)
-    for _ in 0..args.samples - 1 {
-        let sample = sample_mandelbrot(args, super_sample(c, range));
-        if sample.is_some() {
-            sum += sample.unwrap();
-            diverged_samples += 1
+    for dx in 0..args.samples.sqrt() {
+        for dy in 0..args.samples.sqrt() {
+            let subpixel_center = c + Complex::new(
+                dx as f64 * subpixel_width, dy as f64 * subpixel_width);
+            let sample_location = random_offset(subpixel_center, subpixel_width);
+            if let Some(sample) = sample_mandelbrot(args, sample_location) {
+                sum += sample;
+                diverged_samples += 1
+            }
         }
     }
 
@@ -73,10 +77,11 @@ fn super_sample_mandelbrot(args: &Args, range: f64, c: Complex<f64>) -> Option<f
     }
 }
 
-fn super_sample(c: Complex<f64>, range: f64) -> Complex<f64> {
+fn random_offset(c: Complex<f64>, range: f64) -> Complex<f64> {
     let mut rng = rand::rng();
-    let re = rng.random_range(-range..range);
-    let im = rng.random_range(-range..range);
+    let half_range = range / 2.0;
+    let re = rng.random_range(-half_range..half_range);
+    let im = rng.random_range(-half_range..half_range);
     c + Complex::new(re, im)
 }
 
