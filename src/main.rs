@@ -45,10 +45,6 @@ struct Args {
     #[arg(short, long, default_value_t = 4)]
     samples: u32,
 
-    /// Number of worker threads to run the calculation on.
-    #[arg(short, long, default_value_t = 1)]
-    workers: usize,
-
     /// Color scheme for the resulting image.
     #[arg(short, long, default_value_t, value_enum)]
     palette: PresetPalette,
