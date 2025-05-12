@@ -25,15 +25,15 @@ Usage: mandelbrot [OPTIONS]
 
 Options:
   -o, --output <OUTPUT>
-          Output file path [default: ]
+          Output file path [default: mandelbrot.png]
   -x, --x-res <X_RES>
           Width of the generated image [default: 1000]
   -y, --y-res <Y_RES>
           Height of the generated image [default: 1000]
   -r, --real-offset <REAL_OFFSET>
-          Center location on the real axis [default: -1]
+          Center location on the real (horizontal) axis [default: -0.5]
   -c, --complex-offset <COMPLEX_OFFSET>
-          Center location on the imaginary axis [default: 0]
+          Center location on the imaginary (vertical) axis [default: 0]
   -z, --zoom <ZOOM>
           Zoom factor (pixels per unit distance on complex plane) [default: 300]
   -t, --threshold <THRESHOLD>
@@ -42,12 +42,12 @@ Options:
           Number of iterations before assuming sequence does not diverge [default: 100]
   -s, --samples <SAMPLES>
           Number of samples taken within each pixel, i.e. super-sampling [default: 4]
-  -w, --workers <WORKERS>
-          Number of worker threads to run the calculation on [default: 1]
   -p, --palette <PALETTE>
           Color scheme for the resulting image [default: viridis] [possible values: viridis, black-white, aurora]
       --palette-clamp <PALETTE_CLAMP>
-          Percentile after which to consider pixels as having reached the end of the color palette. Avoids a small number of extreme values throwing off the color scale [default: 1]
+          Percentile after which to consider pixels as having reached the end of the color palette. Avoids a small number of extreme values throwing off the color scale [default: 0.99]
+      --smooth
+          
   -h, --help
           Print help
   -V, --version
