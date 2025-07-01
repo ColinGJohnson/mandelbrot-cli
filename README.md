@@ -50,7 +50,8 @@ Options:
       --palette-clamp <PALETTE_CLAMP>
           Percentile after which to consider pixels as having reached the end of the color palette. Avoids a small number of extreme values throwing off the color scale [default: 0.99]
       --smooth
-          
+          Whether to smooth escape time values to improve gradients in the rendered image. Smoothing is based on the final value of the `z` term when the sequence diverged
+  
   -h, --help
           Print help
   -V, --version

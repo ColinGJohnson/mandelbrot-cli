@@ -54,6 +54,8 @@ struct Args {
     #[arg(long, default_value_t = 0.99)]
     palette_clamp: f64,
 
+    /// Whether to smooth escape time values to improve gradients in the rendered image.
+    /// Smoothing is based on the final value of the `z` term when the sequence diverged.
     #[arg(long, default_value_t = true)]
     smooth: bool
 }
