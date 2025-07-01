@@ -1,6 +1,9 @@
 
 # mandelbrot-cli
 
+![License](https://img.shields.io/github/license/ColinGJohnson/mandelbrot-cli)
+![Build status](https://github.com/ColinGJohnson/mandelbrot-cli/actions/workflows/build.yml/badge.svg)
+
 A command line utility to generate visualizations of the [Mandelbrot Set](https://en.wikipedia.org/wiki/Mandelbrot_set).
 
 ## Examples
